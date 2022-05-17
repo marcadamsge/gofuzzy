@@ -27,7 +27,7 @@ func TestSearch(t *testing.T) {
 
 	checkResult(
 		t,
-		Search(testTrie, "cat", 0, 1),
+		testTrie, "cat", 0, 1,
 		[]Result[string]{
 			{
 				Value:    &word1,
@@ -38,7 +38,7 @@ func TestSearch(t *testing.T) {
 
 	checkResult(
 		t,
-		Search(testTrie, "og", 1, 1),
+		testTrie, "og", 1, 1,
 		[]Result[string]{
 			{
 				Value:    &word3,
@@ -49,7 +49,7 @@ func TestSearch(t *testing.T) {
 
 	checkResult(
 		t,
-		Search(testTrie, "do", 1, 1),
+		testTrie, "do", 1, 1,
 		[]Result[string]{
 			{
 				Value:    &word3,
@@ -60,7 +60,7 @@ func TestSearch(t *testing.T) {
 
 	checkResult(
 		t,
-		Search(testTrie, "dgo", 1, 1),
+		testTrie, "dgo", 1, 1,
 		[]Result[string]{
 			{
 				Value:    &word3,
@@ -71,7 +71,7 @@ func TestSearch(t *testing.T) {
 
 	checkResult(
 		t,
-		Search(testTrie, "dogg", 1, 1),
+		testTrie, "dogg", 1, 1,
 		[]Result[string]{
 			{
 				Value:    &word3,
@@ -82,7 +82,7 @@ func TestSearch(t *testing.T) {
 
 	checkResult(
 		t,
-		Search(testTrie, "dogd", 1, 1),
+		testTrie, "dogd", 1, 1,
 		[]Result[string]{
 			{
 				Value:    &word3,
@@ -93,7 +93,7 @@ func TestSearch(t *testing.T) {
 
 	checkResult(
 		t,
-		Search(testTrie, "dod", 1, 1),
+		testTrie, "dod", 1, 1,
 		[]Result[string]{
 			{
 				Value:    &word3,
@@ -104,7 +104,7 @@ func TestSearch(t *testing.T) {
 
 	checkResult(
 		t,
-		Search(testTrie, "cat", 1, 2),
+		testTrie, "cat", 1, 2,
 		[]Result[string]{
 			{
 				Value:    &word1,
@@ -119,7 +119,7 @@ func TestSearch(t *testing.T) {
 
 	checkResult(
 		t,
-		Search(testTrie, "cat", 1, 1),
+		testTrie, "cat", 1, 1,
 		[]Result[string]{
 			{
 				Value:    &word1,
@@ -130,7 +130,7 @@ func TestSearch(t *testing.T) {
 
 	checkResult(
 		t,
-		Search(testTrie, "cat", 3, 4),
+		testTrie, "cat", 3, 4,
 		[]Result[string]{
 			{
 				Value:    &word1,
@@ -148,8 +148,11 @@ func TestSearch(t *testing.T) {
 	)
 }
 
-func checkResult(t *testing.T, result []Result[string], expectedResult []Result[string]) {
-	if !reflect.DeepEqual(result, expectedResult) {
+func checkResult(t *testing.T, trie *trie.Trie[string], word string, distance int, maxResults int, expectedResult []Result[string]) {
+	collector := NewListCollector[string](maxResults)
+	Search[string](trie, word, distance, collector)
+
+	if !reflect.DeepEqual(collector.Results, expectedResult) {
 		t.Log(string(debug.Stack()))
 		t.Fatal("unexpected result")
 	}

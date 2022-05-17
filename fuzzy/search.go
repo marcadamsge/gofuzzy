@@ -7,52 +7,51 @@ import (
 	"sync/atomic"
 )
 
-type Result[T any] struct {
-	Value    *T
-	Distance int
+// Search a fuzzy match on the trie until collector.Done() is true or there is no more match given the Levenshtein distance.
+// Search calls collector.Collect first with the closest match, and then the second closest, etc...
+func Search[T any](trie *trie.Trie[T], word string, distance int, collector ResultCollector[T]) {
+	doneChannel := make(chan struct{}, 1)
+	var continueRun int32 = 1
+	continueRunPtr := &continueRun
+
+	search[T](continueRunPtr, doneChannel, trie, word, distance, collector)
 }
 
-func SearchAsync[T any](ctx context.Context, trie *trie.Trie[T], word string, distance int, maxResult int) <-chan []Result[T] {
+// SearchAsync does the same as Search but may also stop when the context cancels the search.
+// Canceling a search does not delete all the matches already found.
+// The output channel is written to when the search is completed to notify that the search is finished.
+func SearchAsync[T any](ctx context.Context, trie *trie.Trie[T], word string, distance int, collector ResultCollector[T]) <-chan struct{} {
 	cancelChannel := ctx.Done()
-	resultChannel := make(chan []Result[T], 1)
+	searchDoneChannel := make(chan struct{}, 1)
 
 	var continueRun int32 = 1
 	continueRunPtr := &continueRun
 
 	if cancelChannel != nil {
-		outputChannel := make(chan []Result[T], 1)
+		doneChannel := make(chan struct{}, 1)
 
 		go func() {
 			select {
 			case <-cancelChannel:
 				atomic.StoreInt32(continueRunPtr, 0)
-				outputChannel <- <-resultChannel
+				// wait for the search to cleanly before notifying that the search is done
+				doneChannel <- <-searchDoneChannel
 				return
-			case output := <-resultChannel:
-				outputChannel <- output
+			case <-searchDoneChannel:
+				doneChannel <- struct{}{}
 				return
 			}
 		}()
 
-		return outputChannel
+		go search[T](continueRunPtr, searchDoneChannel, trie, word, distance, collector)
+		return doneChannel
 	}
 
-	go search[T](continueRunPtr, resultChannel, trie, word, distance, maxResult)
-
-	return resultChannel
+	go search[T](continueRunPtr, searchDoneChannel, trie, word, distance, collector)
+	return searchDoneChannel
 }
 
-func Search[T any](trie *trie.Trie[T], word string, distance int, maxResult int) []Result[T] {
-	resultChannel := make(chan []Result[T], 1)
-	var continueRun int32 = 1
-	continueRunPtr := &continueRun
-
-	search[T](continueRunPtr, resultChannel, trie, word, distance, maxResult)
-
-	return <-resultChannel
-}
-
-func search[T any](continueRun *int32, resultChannel chan<- []Result[T], node *trie.Trie[T], str string, distance int, maxResult int) {
+func search[T any](continueRun *int32, doneChannel chan<- struct{}, node *trie.Trie[T], str string, distance int, collector ResultCollector[T]) {
 	priorityQueue := queue.New[T]()
 	priorityQueue.Add(&queue.Item[T]{
 		Position:   0,
@@ -61,11 +60,10 @@ func search[T any](continueRun *int32, resultChannel chan<- []Result[T], node *t
 	})
 
 	runes := []rune(str)
-	output := make([]Result[T], 0, 0)
-	resultSet := make(map[*trie.Trie[T]]interface{})
+	resultSet := make(map[*trie.Trie[T]]struct{})
 	maxPosition := len(runes)
 
-	for crtItem := priorityQueue.Pop(); crtItem != nil && atomic.LoadInt32(continueRun) == 1 && len(output) < maxResult; crtItem = priorityQueue.Pop() {
+	for crtItem := priorityQueue.Pop(); crtItem != nil && atomic.LoadInt32(continueRun) == 1 && !collector.Done(); crtItem = priorityQueue.Pop() {
 		if crtItem.ErrorsLeft > 0 && maxPosition > crtItem.Position {
 			// a character was randomly changed with another one
 			crtItem.Step.Iterate(func(r rune, trie *trie.Trie[T]) {
@@ -117,12 +115,8 @@ func search[T any](continueRun *int32, resultChannel chan<- []Result[T], node *t
 			_, resultAlreadyReturned := resultSet[crtItem.Step]
 
 			if !resultAlreadyReturned {
-				output = append(output, Result[T]{
-					Value:    crtItem.Step.Value,
-					Distance: distance - crtItem.ErrorsLeft,
-				})
-
-				resultSet[crtItem.Step] = nil
+				collector.Collect(crtItem.Step.Value, distance-crtItem.ErrorsLeft)
+				resultSet[crtItem.Step] = struct{}{}
 			}
 		}
 
@@ -139,5 +133,5 @@ func search[T any](continueRun *int32, resultChannel chan<- []Result[T], node *t
 		}
 	}
 
-	resultChannel <- output
+	doneChannel <- struct{}{}
 }
