@@ -44,3 +44,27 @@ func (lc *ListCollector[T]) Done() bool {
 
 	return false
 }
+
+func NewCountCollector[T any](maxResult int) *CountCollector[T] {
+	return &CountCollector[T]{
+		MaxResult:   maxResult,
+		ResultCount: 0,
+	}
+}
+
+// CountCollector simply counts the number of results until MaxResult number is collected.
+// The actual results are discarded.
+type CountCollector[T any] struct {
+	MaxResult   int
+	ResultCount int
+}
+
+func (cc *CountCollector[T]) Collect(t *T, distance int) {
+	if t != nil {
+		cc.ResultCount++
+	}
+}
+
+func (cc *CountCollector[T]) Done() bool {
+	return cc.ResultCount >= cc.MaxResult
+}
