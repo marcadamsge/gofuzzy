@@ -23,8 +23,8 @@ func TestTrie(t *testing.T) {
 
 	i1 := 0
 	testTrie.Insert("", &i1, testCombineFunction)
-	if testTrie.Value != nil || len(testTrie.children) != 0 {
-		t.Fatal("state should be unchanged")
+	if testTrie.Value != &i1 || len(testTrie.children) != 0 {
+		t.Fatal("unexpected state")
 	}
 
 	i2 := 1
