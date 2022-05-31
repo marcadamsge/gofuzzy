@@ -13,17 +13,11 @@ func New[T any]() *Trie[T] {
 }
 
 func (trie *Trie[T]) Insert(str string, value *T, combineValues func(t1 *T, t2 *T) *T) {
-	runes := []rune(str)
 	crtTrie := trie
-	if len(runes) >= 2 {
-		for _, r := range runes[:len(runes)-1] {
-			crtTrie = crtTrie.stepOrCreate(r)
-		}
+	for _, r := range []rune(str) {
+		crtTrie = crtTrie.stepOrCreate(r)
 	}
-
-	if len(runes) >= 1 {
-		crtTrie.createOrMerge(runes[len(runes)-1], value, combineValues)
-	}
+	crtTrie.Value = combineValues(crtTrie.Value, value)
 }
 
 // Step out with the rune r and return the next Trie or nil if it does not exist.
@@ -49,17 +43,4 @@ func (trie *Trie[T]) stepOrCreate(r rune) *Trie[T] {
 	}
 	trie.children[r] = out
 	return out
-}
-
-func (trie *Trie[T]) createOrMerge(r rune, value *T, combineValues func(t1 *T, t2 *T) *T) {
-	step, ok := trie.children[r]
-	if ok {
-		step.Value = combineValues(step.Value, value)
-	} else {
-		out := &Trie[T]{
-			children: make(map[rune]*Trie[T]),
-			Value:    value,
-		}
-		trie.children[r] = out
-	}
 }
