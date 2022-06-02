@@ -83,7 +83,7 @@ func perfTestReader(
 	linesParsed := uint32(0)
 	lastPercent := uint32(0)
 
-	println("0% done")
+	print("0% done")
 
 	for geoNamesScanner.Scan() {
 		line := strings.Split(geoNamesScanner.Text(), "\t")
@@ -103,9 +103,10 @@ func perfTestReader(
 		percentDone := linesParsed * 100 / numberOfLines
 		if percentDone != lastPercent {
 			lastPercent = percentDone
-			fmt.Printf("%d%% done\n", percentDone)
+			fmt.Printf("\033[1K\r%d%% done", percentDone)
 		}
 	}
+	println()
 
 	if geoNamesScanner.Err() != nil {
 		fmt.Printf("got error while reading geonames input file: %s\n", geoNamesScanner.Err())

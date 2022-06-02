@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	geoNamesFileName := flag.String("geo", "", "GeoNames file to parse")
+	geoNamesFileName := flag.String("geo", "", "geonames file to parse")
 	threads := flag.Int("threads", runtime.NumCPU(), "number of threads to use for the test")
 	maxResults := flag.Int("n", 1, "max number of results per test")
 	flag.Parse()
@@ -28,6 +28,8 @@ func main() {
 		println("at least on result is needed")
 		os.Exit(1)
 	}
+
+	startTime := time.Now()
 
 	geoNamesReader, err := os.Open(*geoNamesFileName)
 	if err != nil {
@@ -67,6 +69,17 @@ func main() {
 		fmt.Printf("got error while parsing the geonames file: %s\n", err.Error())
 		os.Exit(1)
 	}
+
+	testDuration := time.Now().Sub(startTime)
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	fmt.Printf(
+		"total test time: %fs\nnumber of mallocs: %d\ntime in GC %dns\n",
+		testDuration.Seconds(),
+		m.Mallocs,
+		m.PauseTotalNs,
+	)
 }
 
 func triggerGC() {
