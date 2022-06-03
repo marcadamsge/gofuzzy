@@ -9,49 +9,30 @@ import (
 
 // Search a fuzzy match on the trie until collector.Done() is true or there is no more match given the Levenshtein distance.
 // Search calls collector.Collect first with the closest match, and then the second closest, etc...
-func Search[T any](trie *trie.Trie[T], word string, distance int, collector ResultCollector[T]) {
-	doneChannel := make(chan struct{}, 1)
+func Search[T any](ctx context.Context, trie *trie.Trie[T], word string, distance int, collector ResultCollector[T]) {
 	var continueRun int32 = 1
 	continueRunPtr := &continueRun
 
-	search[T](continueRunPtr, doneChannel, trie, word, distance, collector)
-}
-
-// SearchAsync does the same as Search but may also stop when the context cancels the search.
-// Canceling a search does not delete all the matches already found.
-// The output channel is written to when the search is completed to notify that the search is finished.
-func SearchAsync[T any](ctx context.Context, trie *trie.Trie[T], word string, distance int, collector ResultCollector[T]) <-chan struct{} {
 	cancelChannel := ctx.Done()
-	searchDoneChannel := make(chan struct{}, 1)
-
-	var continueRun int32 = 1
-	continueRunPtr := &continueRun
-
 	if cancelChannel != nil {
-		doneChannel := make(chan struct{}, 1)
+		searchDoneChannel := make(chan struct{}, 1)
+		defer close(searchDoneChannel)
 
 		go func() {
 			select {
 			case <-cancelChannel:
 				atomic.StoreInt32(continueRunPtr, 0)
-				// wait for the search to cleanly before notifying that the search is done
-				doneChannel <- <-searchDoneChannel
 				return
 			case <-searchDoneChannel:
-				doneChannel <- struct{}{}
 				return
 			}
 		}()
-
-		go search[T](continueRunPtr, searchDoneChannel, trie, word, distance, collector)
-		return doneChannel
 	}
 
-	go search[T](continueRunPtr, searchDoneChannel, trie, word, distance, collector)
-	return searchDoneChannel
+	search[T](continueRunPtr, trie, word, distance, collector)
 }
 
-func search[T any](continueRun *int32, doneChannel chan<- struct{}, node *trie.Trie[T], str string, distance int, collector ResultCollector[T]) {
+func search[T any](continueRun *int32, node *trie.Trie[T], str string, distance int, collector ResultCollector[T]) {
 	priorityQueue := queue.New[T]()
 	priorityQueue.Add(&queue.Item[T]{
 		Position:   0,
@@ -132,6 +113,4 @@ func search[T any](continueRun *int32, doneChannel chan<- struct{}, node *trie.T
 			}
 		}
 	}
-
-	doneChannel <- struct{}{}
 }
