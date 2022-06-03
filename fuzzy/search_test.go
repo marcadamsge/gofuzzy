@@ -1,6 +1,7 @@
 package fuzzy
 
 import (
+	"context"
 	"github.com/marcadamsge/gofuzzy/trie"
 	"reflect"
 	"runtime/debug"
@@ -150,7 +151,7 @@ func TestSearch(t *testing.T) {
 
 func checkResult(t *testing.T, trie *trie.Trie[string], word string, distance int, maxResults int, expectedResult []Result[string]) {
 	collector := NewListCollector[string](maxResults)
-	Search[string](trie, word, distance, collector)
+	Search[string](context.Background(), trie, word, distance, collector)
 
 	if !reflect.DeepEqual(collector.Results, expectedResult) {
 		t.Log(string(debug.Stack()))
