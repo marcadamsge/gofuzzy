@@ -8,8 +8,9 @@ First the dataset has to be indexed in a trie:
 
 ```go
 import (
-    "github.com/marcadamsge/gofuzzy/fuzzy"
-    "github.com/marcadamsge/gofuzzy/trie"
+	"context"
+	"github.com/marcadamsge/gofuzzy/fuzzy"
+	"github.com/marcadamsge/gofuzzy/trie"
 )
 
 // Create a new Trie and specify the type that it will be storing
@@ -44,7 +45,7 @@ myTrie.Insert(black, &black, combineFunction)
 myCollector := fuzzy.NewListCollector[string](3)
 
 // Run the search
-fuzzy.Search[string](myTrie, "bue", 1, myCollector)
+fuzzy.Search[string](context.Background(), myTrie, "bue", 1, myCollector)
 
 result := myCollector.Results
 ```
