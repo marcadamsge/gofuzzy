@@ -1,6 +1,7 @@
 package colors
 
 import (
+	"context"
 	"github.com/marcadamsge/gofuzzy/fuzzy"
 	"github.com/marcadamsge/gofuzzy/trie"
 )
@@ -40,7 +41,7 @@ func TestTrie(t *testing.T) {
 	myCollector := fuzzy.NewListCollector[string](3)
 
 	// Run the search
-	fuzzy.Search[string](myTrie, "bue", 1, myCollector)
+	fuzzy.Search[string](context.Background(), myTrie, "bue", 1, myCollector)
 
 	result := myCollector.Results
 	if len(result) != 1 || result[0].Value != &blue {

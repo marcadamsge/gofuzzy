@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/marcadamsge/gofuzzy/fuzzy"
@@ -144,7 +145,7 @@ func perfTestWorker(
 		collector := fuzzy.NewCountCollector[Entry](maxResults)
 
 		start := time.Now()
-		fuzzy.Search[Entry](genNamesTrie, fuzzyName, maxDistance, collector)
+		fuzzy.Search[Entry](context.Background(), genNamesTrie, fuzzyName, maxDistance, collector)
 		end := time.Now()
 
 		outputChannel <- testOutput{
