@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestSearch(t *testing.T) {
+func TestFuzzySearch(t *testing.T) {
 	testTrie := trie.New[string]()
 	word1 := "cat"
 	word2 := "tat"
@@ -157,4 +157,51 @@ func checkResult(t *testing.T, trie *trie.Trie[string], word string, distance in
 		t.Log(string(debug.Stack()))
 		t.Fatal("unexpected result")
 	}
+}
+
+type testCollector struct {
+	counter int
+	cancel  context.CancelFunc
+}
+
+func (tc *testCollector) Collect(t *string, distance int) {
+
+}
+
+func (tc *testCollector) Done() bool {
+	if tc.counter == 0 {
+		tc.cancel()
+	}
+
+	tc.counter--
+	return true
+}
+
+func TestSearchCanBeCanceled(t *testing.T) {
+	backgroundContext := context.Background()
+	cancelableContext, cancelFunction := context.WithCancel(backgroundContext)
+
+	var collector ResultCollector[string] = &testCollector{
+		counter: 1,
+		cancel:  cancelFunction,
+	}
+
+	testTrie := trie.New[string]()
+	word1 := "cat"
+	word2 := "tat"
+	word3 := "dog"
+
+	combineFunction := func(t1 *string, t2 *string) *string {
+		if t1 != nil {
+			return t1
+		}
+
+		return t2
+	}
+
+	testTrie.Insert(word1, &word1, combineFunction)
+	testTrie.Insert(word2, &word2, combineFunction)
+	testTrie.Insert(word3, &word3, combineFunction)
+
+	Search[string](cancelableContext, testTrie, "cat", 3, collector)
 }
