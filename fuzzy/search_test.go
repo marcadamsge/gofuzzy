@@ -172,17 +172,16 @@ func (tc *testCollector) Done() bool {
 	if tc.counter == 0 {
 		tc.cancel()
 	}
-
 	tc.counter--
-	return true
+	return false
 }
 
 func TestSearchCanBeCanceled(t *testing.T) {
 	backgroundContext := context.Background()
 	cancelableContext, cancelFunction := context.WithCancel(backgroundContext)
 
-	var collector ResultCollector[string] = &testCollector{
-		counter: 1,
+	var collector = &testCollector{
+		counter: 2,
 		cancel:  cancelFunction,
 	}
 
@@ -204,4 +203,8 @@ func TestSearchCanBeCanceled(t *testing.T) {
 	testTrie.Insert(word3, &word3, combineFunction)
 
 	Search[string](cancelableContext, testTrie, "cat", 3, collector)
+
+	if collector.counter != -1 {
+		t.Fatalf("Search should of stopped when the context got canceled, but counter was on %d", collector.counter)
+	}
 }
