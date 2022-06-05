@@ -4,35 +4,11 @@ import (
 	"context"
 	"github.com/marcadamsge/gofuzzy/queue"
 	"github.com/marcadamsge/gofuzzy/trie"
-	"sync/atomic"
 )
 
 // Search a fuzzy match on the trie until collector.Done() is true or there is no more match given the Levenshtein distance.
 // Search calls collector.Collect first with the closest match, and then the second closest, etc...
-func Search[T any](ctx context.Context, trie *trie.Trie[T], word string, distance int, collector ResultCollector[T]) {
-	var continueRun int32 = 1
-	continueRunPtr := &continueRun
-
-	cancelChannel := ctx.Done()
-	if cancelChannel != nil {
-		searchDoneChannel := make(chan struct{}, 1)
-		defer close(searchDoneChannel)
-
-		go func() {
-			select {
-			case <-cancelChannel:
-				atomic.StoreInt32(continueRunPtr, 0)
-				return
-			case <-searchDoneChannel:
-				return
-			}
-		}()
-	}
-
-	search[T](continueRunPtr, trie, word, distance, collector)
-}
-
-func search[T any](continueRun *int32, node *trie.Trie[T], str string, distance int, collector ResultCollector[T]) {
+func Search[T any](ctx context.Context, node *trie.Trie[T], str string, distance int, collector ResultCollector[T]) {
 	priorityQueue := queue.New[T]()
 	priorityQueue.Add(&queue.Item[T]{
 		Position:   0,
@@ -44,7 +20,17 @@ func search[T any](continueRun *int32, node *trie.Trie[T], str string, distance 
 	resultSet := make(map[*trie.Trie[T]]struct{})
 	maxPosition := len(runes)
 
-	for crtItem := priorityQueue.Pop(); crtItem != nil && atomic.LoadInt32(continueRun) == 1 && !collector.Done(); crtItem = priorityQueue.Pop() {
+	doneCh := ctx.Done()
+
+Loop:
+	for crtItem := priorityQueue.Pop(); crtItem != nil && !collector.Done(); crtItem = priorityQueue.Pop() {
+		// stop the loop of the context gets canceled
+		select {
+		case <-doneCh:
+			break Loop
+		default:
+		}
+
 		if crtItem.ErrorsLeft > 0 && maxPosition > crtItem.Position {
 			// a character was randomly changed with another one
 			crtItem.Step.Iterate(func(r rune, trie *trie.Trie[T]) {
