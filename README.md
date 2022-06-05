@@ -1,10 +1,11 @@
 # GoFuzzy
 
-Fuzzy search library backed by an in-memory [Trie](https://en.wikipedia.org/wiki/Trie).
+In-memory fuzzy search library on strings as measured by a Levenshtein edit distance.
 
 ## Getting Started
 
-First the dataset has to be indexed in a trie:
+The fuzzy search function uses an in-memory [Trie](https://en.wikipedia.org/wiki/Trie).
+The dataset has to be indexed in a trie first, and then we can execute some fuzzy matching:
 
 ```go
 import (
