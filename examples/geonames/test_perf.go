@@ -98,6 +98,10 @@ func perfTestReader(
 		}
 
 		name := line[1]
+		if len(name) == 0 {
+			continue
+		}
+
 		outputChannel <- name
 		linesParsed++
 
