@@ -23,7 +23,7 @@ func fuzzySearchPerfTest(
 	numberOfLines uint32,
 	maxResult int,
 ) error {
-	alphabet := []rune{'a', 'b', 'c', 'd', 'e', 'f'}
+	alphabet := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	println("starting performance test...")
 
 	if threads < 1 {
