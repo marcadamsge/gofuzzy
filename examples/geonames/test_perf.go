@@ -146,6 +146,14 @@ func perfTestWorker(
 		}
 
 		fuzzyName := gen.RandomFuzzyErrors(name, randGen, maxDistance, alphabet)
+		if len(fuzzyName) == 0 {
+			fmt.Printf(
+				"error: got a 0 length fuzzy name: fuzzyName '%s', original name '%s', max distance '%d'\n",
+				fuzzyName,
+				name,
+				maxDistance,
+			)
+		}
 		collector := fuzzy.NewCountCollector[Entry](maxResults)
 
 		start := time.Now()
