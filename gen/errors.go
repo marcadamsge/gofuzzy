@@ -9,8 +9,8 @@ type errorType int
 
 const (
 	insert  errorType = 0
-	remove            = 1
-	replace           = 2
+	replace           = 1
+	remove            = 2
 	swap              = 3
 )
 
@@ -24,7 +24,10 @@ func RandomFuzzyErrors(word string, randGen RandIntGenerator, distance int, alph
 			// only insert error is possible in that case
 			randomError = insert
 		} else if len(out) == 1 {
-			// insert, remove or replace is possible
+			// insert or replace is possible
+			randomError = errorType(randGen.Intn(2))
+		} else if len(out) == 2 {
+			// insert, replace or remove is possible
 			randomError = errorType(randGen.Intn(3))
 		} else {
 			// any error is possible

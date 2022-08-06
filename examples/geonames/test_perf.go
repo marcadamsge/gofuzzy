@@ -23,7 +23,7 @@ func fuzzySearchPerfTest(
 	numberOfLines uint32,
 	maxResult int,
 ) error {
-	alphabet := []rune{'a', 'b', 'c', 'd', 'e', 'f'}
+	alphabet := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	println("starting performance test...")
 
 	if threads < 1 {
@@ -98,6 +98,10 @@ func perfTestReader(
 		}
 
 		name := line[1]
+		if len(name) == 0 {
+			continue
+		}
+
 		outputChannel <- name
 		linesParsed++
 
@@ -142,6 +146,14 @@ func perfTestWorker(
 		}
 
 		fuzzyName := gen.RandomFuzzyErrors(name, randGen, maxDistance, alphabet)
+		if len(fuzzyName) == 0 {
+			fmt.Printf(
+				"error: got a 0 length fuzzy name: fuzzyName '%s', original name '%s', max distance '%d'\n",
+				fuzzyName,
+				name,
+				maxDistance,
+			)
+		}
 		collector := fuzzy.NewCountCollector[Entry](maxResults)
 
 		start := time.Now()

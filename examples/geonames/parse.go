@@ -41,6 +41,11 @@ func parseGeoNamesFile(geoNamesReader io.Reader) (*trie.Trie[Entry], uint32, err
 			continue
 		}
 
+		name := line[1]
+		if len(name) == 0 {
+			continue
+		}
+
 		latitude, err := strconv.ParseFloat(line[4], 32)
 		if err != nil {
 			return nil, 0, err
@@ -57,7 +62,6 @@ func parseGeoNamesFile(geoNamesReader io.Reader) (*trie.Trie[Entry], uint32, err
 		}
 
 		linesParsed++
-		name := line[1]
 
 		entry := &Entry{
 			Name:        name,
@@ -80,7 +84,7 @@ func parseGeoNamesFile(geoNamesReader io.Reader) (*trie.Trie[Entry], uint32, err
 
 func combineEntries(e1 *Entry, e2 *Entry) *Entry {
 	if e1 != nil && e2 != nil {
-		for k, _ := range e2.LocationSet {
+		for k := range e2.LocationSet {
 			e1.LocationSet[k] = struct{}{}
 		}
 

@@ -97,14 +97,14 @@ dataset loaded in 12.777391 seconds
 4925661 lines parsed, 4925661 elements inserted in the trie
 triggering manual GC...
 Allocated Memory = 2984 MiB
-starting performance test...
-100% done
-results:
-length: 0 min, 148 max, 10.246060 average
-time (in nano second): 299 min, 181557838 max, 20391663.284386 average
-total test time: 8386.500951s
-number of mallocs: 159257259696
-time in GC 695696584ns
+starting performance test...                                                                                                                                                           
+100% done                                                                                                                                                                             
+results:                                                                                                                                                                               
+length: 1 min, 146 max, 10.246239 average                                                                                                                                             
+time (in nano second): 259 min, 221843013 max, 19624879.088675 average                                                                                                                 
+total test time: 8070.156023s                                                                                                                                                         
+number of mallocs: 156814331520                                                                                                                                                        
+time in GC 714313851ns
 ```
 
 After indexing the data set a GC is manually triggered to see how much memory is needed to have the whole dataset in
@@ -115,5 +115,5 @@ Result:
 
 | Metric               | Min            | Max             | Average        |
 |----------------------|----------------|-----------------|----------------|
-| Search string length | 0              | 148             | 10.24          |
-| Query time           | 299 nanosecond | 181 millisecond | 20 millisecond |
+| Search string length | 1              | 146             | 10.24          |
+| Query time           | 259 nanosecond | 221 millisecond | 19 millisecond |
